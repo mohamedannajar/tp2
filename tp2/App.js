@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, SafeAreaView, StyleSheet } from 'react-native';
+import { View, SafeAreaView, StyleSheet, ImageBackground } from 'react-native';
 import * as Location from 'expo-location';
 import { StatusBar } from 'expo-status-bar';
 import WeatherHeader from './components/WeatherHeader';
@@ -60,24 +60,53 @@ export default function WeatherApp() {
     setForecast(groupedData);
   };
 
+  // Déterminer l'image en fonction du temps actuel
+  const getBackgroundImage = () => {
+    if (!currentWeather) return;
+
+    const weatherCondition = currentWeather.weather[0].main.toLowerCase();
+
+    switch (weatherCondition) {
+      case 'clear':
+        return require('./assets/Sunny.jpg'); // Image ensoleillée
+      case 'rain':
+        return require('./assets/rain.jpg'); // Image de pluie
+      case 'clouds':
+        return require('./assets/cloudy.jpg'); // Image nuageuse
+      case 'snow':
+        return require('./assets/snow.jpg'); // Image de neige
+      default:
+        return require('./assets/default.jpg'); // Image par défaut
+    }
+  };
+
   if (loading) return <Loader />;
 
   return (
-    <SafeAreaView style={styles.safeAreaContainer}>
-      <StatusBar style="dark" />
-      <View style={styles.container}>
-        {currentWeather && <WeatherHeader currentWeather={currentWeather} />}
-        {selectedDay ? (
-          <ForecastDetail forecast={forecast} selectedDay={selectedDay} onBack={() => setSelectedDay(null)} />
-        ) : (
-          <ForecastList forecast={forecast} onDaySelect={setSelectedDay} />
-        )}
-      </View>
-    </SafeAreaView>
+    <ImageBackground
+      source={getBackgroundImage()} // Récupère l'image en fonction de la météo
+      style={styles.background}
+    >
+      <SafeAreaView style={styles.safeAreaContainer}>
+        <StatusBar style="dark" />
+        <View style={styles.container}>
+          {currentWeather && <WeatherHeader currentWeather={currentWeather} />}
+          {selectedDay ? (
+            <ForecastDetail forecast={forecast} selectedDay={selectedDay} onBack={() => setSelectedDay(null)} />
+          ) : (
+            <ForecastList forecast={forecast} onDaySelect={setSelectedDay} />
+          )}
+        </View>
+      </SafeAreaView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  safeAreaContainer: { flex: 1, backgroundColor: '#e0f7fa' },
+  safeAreaContainer: { flex: 1, backgroundColor: 'transparent' },
   container: { flex: 1, padding: 20 },
+  background: {
+    flex: 1,
+    justifyContent: 'center',
+  },
 });
