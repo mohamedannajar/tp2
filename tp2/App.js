@@ -11,7 +11,7 @@ export default function WeatherApp() {
   const [selectedDay, setSelectedDay] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Fonction pour récupérer la localisation de l'utilisateur
+  // Fonction pour obtenir la localisation du téléphone
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
@@ -25,14 +25,13 @@ export default function WeatherApp() {
     })();
   }, []);
 
-  // Fonction pour appeler l'API de météo une fois la localisation récupérée
+  // Fonction pour appeler l'API de météo une fois la localisation obtenue
   useEffect(() => {
     if (location) {
       fetchWeather();
     }
   }, [location]);
 
-  // Fonction pour obtenir la météo actuelle et les prévisions
   const fetchWeather = async () => {
     try {
       setLoading(true);
@@ -87,6 +86,7 @@ export default function WeatherApp() {
       {currentWeather && currentWeather.main && currentWeather.weather && (
         <View style={styles.currentWeatherContainer}>
           <Text style={styles.title}>Météo actuelle</Text>
+          <Text style={styles.coords}>Latitude: {location.latitude.toFixed(2)}, Longitude: {location.longitude.toFixed(2)}</Text>
           <Text style={styles.temp}>{Math.round(currentWeather.main.temp)}°C</Text>
           <Text>{currentWeather.weather[0].description}</Text>
         </View>
@@ -156,6 +156,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 10,
+  },
+  coords: {
+    fontSize: 16,
+    color: '#555',
+    marginBottom: 5,
   },
   temp: {
     fontSize: 18,
