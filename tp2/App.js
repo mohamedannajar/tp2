@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ActivityIndicator, FlatList, StyleSheet, TouchableOpacity, Button } from 'react-native';
+import { View, Text, ActivityIndicator, FlatList, StyleSheet, TouchableOpacity, Button, Image, SafeAreaView } from 'react-native';
 import * as Location from 'expo-location';
+import { StatusBar } from 'expo-status-bar';
 
 const API_KEY = 'a963bb4dd1db05ef573fbfabdba4d02d';
 
@@ -73,72 +74,99 @@ export default function WeatherApp() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <SafeAreaView style={styles.safeAreaContainer}>
         <ActivityIndicator size="large" color="#0000ff" />
         <Text>Chargement des données météo...</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      {/* Affichage de la météo actuelle */}
-      {currentWeather && currentWeather.main && currentWeather.weather && (
-        <View style={styles.currentWeatherContainer}>
-          <Text style={styles.title}>Météo actuelle</Text>
-          <Text style={styles.coords}>Latitude: {location.latitude.toFixed(2)}, Longitude: {location.longitude.toFixed(2)}</Text>
-          <Text style={styles.temp}>{Math.round(currentWeather.main.temp)}°C</Text>
-          <Text>{currentWeather.weather[0].description}</Text>
-        </View>
-      )}
+    <SafeAreaView style={styles.safeAreaContainer}>
+      <StatusBar style="dark" />
+      <View style={styles.container}>
+        {/* Affichage de la météo actuelle */}
+        {currentWeather && currentWeather.main && currentWeather.weather && (
+          <View style={styles.currentWeatherContainer}>
+            <Text style={styles.title}>Météo actuelle</Text>
+            
+            {/* Nom de la ville */}
+            <Text style={styles.city}>{currentWeather.name}</Text>
+            
+            {/* Température */}
+            <Text style={styles.temp}>{Math.round(currentWeather.main.temp)}°C</Text>
 
-      {/* Vue détaillée pour un jour */}
-      {selectedDay ? (
-        <View style={styles.forecastContainer}>
-          <Button title="Retour" onPress={() => setSelectedDay(null)} />
-          <Text style={styles.title}>{selectedDay}</Text>
+            {/* Description de la météo */}
+            <Text>{currentWeather.weather[0].description}</Text>
+
+            {/* Icône de la météo */}
+            <Image
+              source={{
+                uri: `http://openweathermap.org/img/wn/${currentWeather.weather[0].icon}@2x.png`
+              }}
+              style={styles.weatherIcon}
+            />
+          </View>
+        )}
+
+        {/* Vue détaillée pour un jour */}
+        {selectedDay ? (
+          <View style={styles.forecastContainer}>
+            <Button title="Retour" onPress={() => setSelectedDay(null)} />
+            <Text style={styles.title}>{selectedDay}</Text>
+            <FlatList
+              data={forecast[selectedDay]}
+              keyExtractor={(item) => item.dt.toString()}
+              renderItem={({ item }) => (
+                <View style={styles.forecastDetailItem}>
+                  <Text>{new Date(item.dt * 1000).toLocaleTimeString("fr-FR", { hour: '2-digit', minute: '2-digit' })}</Text>
+                  <Text style={styles.temp}>{Math.round(item.main.temp)}°C</Text>
+                  <Text>{item.weather[0].description}</Text>
+                </View>
+              )}
+            />
+          </View>
+        ) : (
+          // Vue des jours regroupés avec bouton "Détails"
           <FlatList
-            data={forecast[selectedDay]}
-            keyExtractor={(item) => item.dt.toString()}
-            renderItem={({ item }) => (
-              <View style={styles.forecastDetailItem}>
-                <Text>{new Date(item.dt * 1000).toLocaleTimeString("fr-FR", { hour: '2-digit', minute: '2-digit' })}</Text>
-                <Text style={styles.temp}>{Math.round(item.main.temp)}°C</Text>
-                <Text>{item.weather[0].description}</Text>
-              </View>
+            contentContainerStyle={styles.forecastContainer}
+            ListHeaderComponent={() => (
+              <Text style={styles.title}>Prévisions à 5 jours</Text>
             )}
-          />
-        </View>
-      ) : (
-        // Vue des jours regroupés
-        <View style={styles.forecastContainer}>
-          <Text style={styles.title}>Prévisions à 5 jours</Text>
-          <FlatList
             data={Object.keys(forecast)}
             keyExtractor={(day) => day}
             renderItem={({ item: day }) => (
-              <TouchableOpacity onPress={() => setSelectedDay(day)}>
-                <View style={styles.forecastItem}>
-                  <Text style={styles.dayText}>{day}</Text>
-                  <Text style={styles.temp}>
-                    {Math.round(forecast[day][0].main.temp)}°C
-                  </Text>
-                  <Text>{forecast[day][0].weather[0].description}</Text>
-                </View>
-              </TouchableOpacity>
+              <View style={styles.forecastItem}>
+                <Text style={styles.dayText}>{day}</Text>
+                <Text style={styles.temp}>
+                  {Math.round(forecast[day][0].main.temp)}°C
+                </Text>
+                <Text>{forecast[day][0].weather[0].description}</Text>
+
+                {/* Bouton pour voir les détails du jour */}
+                <TouchableOpacity 
+                  style={styles.detailsButton} 
+                  onPress={() => setSelectedDay(day)}
+                >
+                  <Text style={styles.detailsButtonText}>Détails</Text>
+                </TouchableOpacity>
+              </View>
             )}
           />
-        </View>
-      )}
-    </View>
+        )}
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeAreaContainer: {
+    flex: 1,
+    backgroundColor: '#e0f7fa',
+  },
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#e0f7fa',
   },
   loadingContainer: {
     flex: 1,
@@ -157,6 +185,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 10,
   },
+  city: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
   coords: {
     fontSize: 16,
     color: '#555',
@@ -166,8 +199,14 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
+  weatherIcon: {
+    width: 50,
+    height: 50,
+    marginTop: 10,
+  },
   forecastContainer: {
     marginTop: 20,
+    paddingBottom: 20,  // Padding pour le bas de la liste afin d'avoir de l'espace
   },
   forecastItem: {
     alignItems: 'center',
@@ -186,6 +225,17 @@ const styles = StyleSheet.create({
   },
   dayText: {
     fontSize: 16,
+    fontWeight: 'bold',
+  },
+  detailsButton: {
+    marginTop: 10,
+    paddingVertical: 5,
+    paddingHorizontal: 15,
+    backgroundColor: '#00796b',
+    borderRadius: 5,
+  },
+  detailsButtonText: {
+    color: '#fff',
     fontWeight: 'bold',
   },
 });
